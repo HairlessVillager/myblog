@@ -12,6 +12,10 @@ from sqlalchemy.orm import (
     mapped_column,
 )
 
+from .auth import (
+    get_now,
+)
+
 
 class SqlalchemyBase(AsyncAttrs, DeclarativeBase):
     pass
@@ -47,8 +51,8 @@ class CreateBlogForm(PydaticBase):
             deleted=self.deleted,
             slug=self.slug,
             text=self.text,
-            create_at=datetime.now(),
-            update_at=datetime.now(),
+            create_at=get_now("NOTZ"),
+            update_at=get_now("NOTZ"),
         )
 
 
@@ -61,7 +65,7 @@ class UpdateBlogForm(PydaticBase):
     token: str
 
     def update(self, blog: Blog) -> Blog:
-        blog.update_at = datetime.now()
+        blog.update_at = get_now("NOTZ")
         if self.title:
             blog.title = self.title
         if self.pinned:
@@ -76,6 +80,6 @@ class UpdateBlogForm(PydaticBase):
 
 
 engine = create_async_engine(
-    f"postgresql+asyncpg://postgres:{getenv('DB_PASSWORD')}@127.0.0.1:5432/myblog",
+    getenv("DB_URL"),
     echo=False,
 )

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, Callable, List, Tuple, Dict
-from datetime import datetime
+from os import getenv
 
 from fastapi.middleware import Middleware
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -54,15 +54,9 @@ class SchedulerMiddleware:
 
 
 def get_middleware():
-    engine = create_async_engine(
-        "postgresql+asyncpg://postgres:123456@localhost/myblog"
-    )
+    engine = create_async_engine(getenv("DB_URL"))
     data_store = SQLAlchemyDataStore(engine)
     event_broker = AsyncpgEventBroker.from_async_sqla_engine(engine)
     scheduler = AsyncScheduler(data_store, event_broker)
     middleware = Middleware(SchedulerMiddleware, scheduler=scheduler)
     return middleware
-
-
-# app = FastAPI(middleware=[middleware])
-# app.add_api_route("/", root)

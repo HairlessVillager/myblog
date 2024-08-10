@@ -1,6 +1,16 @@
 from os import getenv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256, pbkdf2_hmac
+
+
+def get_now(tz: str = "UTC+8") -> datetime:
+    if tz == "UTC+8":
+        tz = timezone(timedelta(hours=8))
+        return datetime.now(tz)
+    elif tz == "NOTZ":
+        return datetime.now()
+    else:
+        raise ValueError(f"not known {tz=}")
 
 
 def create_token(dt: datetime) -> str:
@@ -19,7 +29,7 @@ def create_token(dt: datetime) -> str:
 
 def check_token(token: str, timeout: int = 30) -> bool:
     print(f"got {token=}")
-    now = datetime.now()
+    now = get_now()
     for i in range(timeout):
         dt = now - timedelta(seconds=i)
         token2 = create_token(dt)

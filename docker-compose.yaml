@@ -1,0 +1,23 @@
+services:
+  database:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: "123456"
+      POSTGRES_DB: "myblog"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    expose:
+      - "8000"
+    depends_on:
+      - database
+    environment:
+      DB_URL: "postgresql+asyncpg://postgres:123456@database:5432/myblog"
+      SECRET: "123456"
+volumes:
+  db_data:

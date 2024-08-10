@@ -1,16 +1,36 @@
 # TODO: refactor with a argpaser
 # TODO: reuse .auth
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from argparse import ArgumentParser
+from os import getenv
+from hashlib import sha256, pbkdf2_hmac
 
 import requests
 
-from myblog.auth import create_token
+
+def get_now(tz: timezone | None = None) -> datetime:
+    if tz is None:
+        tz = timezone(timedelta(hours=8))
+    return datetime.now(tz)
+
+
+def create_token(dt: datetime) -> str:
+    salt = getenv("SECRET")  # TODO: reuseable configure
+    if salt is None:
+        raise ValueError("SECRET is empty, a value is expected")
+    salt: bytes = sha256(salt.encode("utf-8")).digest()  # type: ignore
+    dk = pbkdf2_hmac(
+        "sha256",
+        dt.strftime("%y-%m-%d %H:%M:%S").encode("utf-8"),
+        salt,  # type: ignore
+        500000,
+    )
+    return dk.hex()
 
 
 def create(args):
-    dt = datetime.now()
+    dt = get_now()
     token = create_token(dt)
     print(f"{dt=}, {token=}")
     resp = requests.post(
@@ -28,7 +48,7 @@ def create(args):
 
 
 def update(args):
-    dt = datetime.now()
+    dt = get_now()
     token = create_token(dt)
     print(f"{dt=}, {token=}")
     json = {
@@ -48,7 +68,7 @@ def update(args):
 
 if __name__ == "__main__":
     parser = ArgumentParser(
-        prog="myblog",
+        prog="myblog-tool",
         description="a tool to sync blogs between local and website",
     )
     subparsers = parser.add_subparsers()

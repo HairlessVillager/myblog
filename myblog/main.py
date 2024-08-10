@@ -1,7 +1,6 @@
-# TODO: logs
-# > uvicorn myblog:app --reload
 from os import getenv
 import logging
+from datetime import timedelta, timezone
 
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -35,6 +34,8 @@ logger = logging.getLogger("app")
 
 
 async def blog2md(blog: Blog) -> str:
+    blog.create_at = blog.create_at.astimezone(tz=timezone(timedelta(hours=8)))
+    blog.update_at = blog.update_at.astimezone(tz=timezone(timedelta(hours=8)))
     template = Template(
         """### HairlessVillager's Blog
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import timedelta, timezone
 import logging
 
 from jinja2 import Template
@@ -16,6 +16,9 @@ from .model import (
 from .schedule import (
     SchedulerMiddleware,
 )
+from .auth import (
+    get_now,
+)
 
 logger = logging.getLogger("app")
 
@@ -27,7 +30,7 @@ async def update_home():
     blog = await get_blog(1)
     if blog:
         text = blog.text
-        text += f"- {datetime.now()}\n"
+        text += f"- {get_now()}\n"
         form = UpdateBlogForm(text=text, token="")
         form.update(blog)
         await update_blog(blog)
@@ -43,7 +46,11 @@ async def update_blog_content():
 {% endfor %}
 """
     )
-    text = template.render(blogs=await get_blogs_sorted_by_id())
+    blogs = await get_blogs_sorted_by_id()
+    for blog in blogs:
+        blog.create_at = blog.create_at.astimezone(tz=timezone(timedelta(hours=8)))
+        blog.update_at = blog.update_at.astimezone(tz=timezone(timedelta(hours=8)))
+    text = template.render(blogs=blogs)
     blog = await get_blog(2)
     if blog:
         blog.text = text
