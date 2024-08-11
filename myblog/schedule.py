@@ -54,7 +54,7 @@ class SchedulerMiddleware:
 
 
 def get_middleware():
-    engine = create_async_engine(getenv("DB_URL"))
+    engine = create_async_engine(getenv("DB_URL_ASYNC"))
     data_store = SQLAlchemyDataStore(engine)
     event_broker = AsyncpgEventBroker.from_async_sqla_engine(engine)
     scheduler = AsyncScheduler(data_store, event_broker)

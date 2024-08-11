@@ -33,7 +33,7 @@ app = FastAPI(middleware=[get_middleware()])
 logger = logging.getLogger("app")
 
 
-async def blog2md(blog: Blog) -> str:
+def blog2md(blog: Blog) -> str:
     blog.create_at = blog.create_at.astimezone(tz=timezone(timedelta(hours=8)))
     blog.update_at = blog.update_at.astimezone(tz=timezone(timedelta(hours=8)))
     template = Template(
@@ -58,7 +58,7 @@ async def blog2md(blog: Blog) -> str:
 {{ blog.text }}
 """
     )
-    md = template.render(pinned_blogs=await get_pinned_blogs_sorted_by_id(), blog=blog)
+    md = template.render(pinned_blogs=get_pinned_blogs_sorted_by_id(), blog=blog)
     return md
 
 
@@ -73,23 +73,22 @@ def md2html(md: str) -> str:
 
 
 @app.on_event("startup")
-async def startup_event():
+def startup_event():
     from .model import SqlalchemyBase, engine
 
     # create all tables
-    async with engine.begin() as conn:
-        if getenv("DROP_ALL"):
-            await conn.run_sync(SqlalchemyBase.metadata.drop_all)
-            logger.warning("startup_event: dropped all tables")
-        await conn.run_sync(SqlalchemyBase.metadata.create_all)
-        logger.info("startup_event: created all tables")
+    if getenv("DROP_ALL"):
+        SqlalchemyBase.metadata.drop_all(engine)
+        logger.warning("startup_event: dropped all tables")
+    SqlalchemyBase.metadata.create_all(engine)
+    logger.info("startup_event: created all tables")
 
     # init home page
-    blog = await get_blog(1)
+    blog = get_blog(1)
     if blog:
         form = UpdateBlogForm(token="")
         form.update(blog)
-        await update_blog(blog)
+        update_blog(blog)
         logger.info("startup_event: home updated")
     else:
         form = CreateBlogForm(
@@ -101,15 +100,15 @@ async def startup_event():
             token="",
         )
         blog = form.to_blog()
-        await create_blog(blog)
+        create_blog(blog)
         logger.info("startup_event: home created")
 
     # init blog content page
-    blog = await get_blog(2)
+    blog = get_blog(2)
     if blog:
         form = UpdateBlogForm(token="")
         form.update(blog)
-        await update_blog(blog)
+        update_blog(blog)
         logger.info("startup_event: blog content updated")
     else:
         form = CreateBlogForm(
@@ -121,11 +120,11 @@ async def startup_event():
             token="",
         )
         blog = form.to_blog()
-        await create_blog(blog)
+        create_blog(blog)
         logger.info("startup_event: blog content created")
 
     # update blog content
-    await update_blog_content()
+    update_blog_content()
     logger.info("startup_event: update blog content successfully")
 
     # mount static files
@@ -134,12 +133,12 @@ async def startup_event():
 
 
 @app.get("/")
-async def home_html():
+def home_html():
     return RedirectResponse(url="/blog/1/home")
 
 
 @app.get("/blog/404-not-found")
-async def blog_404_not_found():
+def blog_404_not_found():
     blog = Blog(
         title="404 Not Found",
         pinned=False,
@@ -149,14 +148,14 @@ async def blog_404_not_found():
         update_at=None,
         text="*this page intentionally left blank*",
     )
-    md = await blog2md(blog)
+    md = blog2md(blog)
     html = md2html(md)
     return HTMLResponse(html)
 
 
 @app.get("/blog/{id}")
-async def blog_redirect(id: int):
-    blog = await get_blog(id)
+def blog_redirect(id: int):
+    blog = get_blog(id)
     if blog:
         return RedirectResponse(url=f"/blog/{blog.id}/{blog.slug}")
     else:
@@ -164,12 +163,12 @@ async def blog_redirect(id: int):
 
 
 @app.get("/blog/{id}/{slug}")
-async def blog_html(id: int, slug: str):
-    blog = await get_blog(id)
+def blog_html(id: int, slug: str):
+    blog = get_blog(id)
     if blog:
         if slug != blog.slug:
             return RedirectResponse(f"/blog/{id}/{blog.slug}")
-        md = await blog2md(blog)
+        md = blog2md(blog)
         html = md2html(md)
         return HTMLResponse(html)
     else:
@@ -177,16 +176,16 @@ async def blog_html(id: int, slug: str):
 
 
 @app.post("/blog/edit/{id}")
-async def blog_update_api(
+def blog_update_api(
     id: int,
     form: UpdateBlogForm,
     background_tasks: BackgroundTasks,
 ):
     if check_token(form.token):
-        blog = await get_blog(id)
+        blog = get_blog(id)
         if blog:
             form.update(blog)
-            await update_blog(blog)
+            update_blog(blog)
             background_tasks.add_task(update_blog_content)
             msg = f"blog {id} updated"
             logger.info(msg)
@@ -198,13 +197,13 @@ async def blog_update_api(
 
 
 @app.post("/blog/new")
-async def blog_new_api(
+def blog_new_api(
     form: CreateBlogForm,
     background_tasks: BackgroundTasks,
 ):
     if check_token(form.token):
         blog = form.to_blog()
-        id = await create_blog(blog)
+        id = create_blog(blog)
         background_tasks.add_task(update_blog_content)
         msg = f"new blog id: {id}"
         logger.info(msg)
@@ -214,5 +213,5 @@ async def blog_new_api(
 
 
 @app.get("/favicon.ico")
-async def favicon_ico():
+def favicon_ico():
     return RedirectResponse("/static/favicon.ico")

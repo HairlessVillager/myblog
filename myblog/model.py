@@ -2,10 +2,7 @@ from datetime import datetime
 from os import getenv
 
 from pydantic import BaseModel as PydaticBase
-from sqlalchemy.ext.asyncio import (
-    create_async_engine,
-    AsyncAttrs,
-)
+from sqlalchemy import create_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -17,7 +14,7 @@ from .auth import (
 )
 
 
-class SqlalchemyBase(AsyncAttrs, DeclarativeBase):
+class SqlalchemyBase(DeclarativeBase):
     pass
 
 
@@ -79,7 +76,7 @@ class UpdateBlogForm(PydaticBase):
         return blog
 
 
-engine = create_async_engine(
-    getenv("DB_URL"),
+engine = create_engine(
+    getenv("DB_URL_SYNC"),
     echo=False,
 )

@@ -17,7 +17,8 @@ services:
     depends_on:
       - database
     environment:
-      DB_URL: "postgresql+asyncpg://postgres:123456@database:5432/myblog"
+      DB_URL_ASYNC: "postgresql+asyncpg://postgres:123456@database:5432/myblog"
+      DB_URL_SYNC: "postgresql+psycopg://postgres:123456@database:5432/myblog"
       SECRET: "123456"
 volumes:
   db_data:

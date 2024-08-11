@@ -24,37 +24,37 @@ logger = logging.getLogger("app")
 
 
 @SchedulerMiddleware.register(IntervalTrigger(seconds=10), paused=True)
-async def update_home():
+def update_home():
     from .query import update_blog
 
-    blog = await get_blog(1)
+    blog = get_blog(1)
     if blog:
         text = blog.text
         text += f"- {get_now()}\n"
         form = UpdateBlogForm(text=text, token="")
         form.update(blog)
-        await update_blog(blog)
+        update_blog(blog)
         logger.info("update_home: successfully")
     else:
         logger.error("update_home: home not exists")
 
 
-async def update_blog_content():
+def update_blog_content():
     template = Template(
         """{% for blog in blogs %}
 - {{ blog.create_at }} [{{ blog.title }}](/blog/{{ blog.id }}/{{ blog.slug }})
 {% endfor %}
 """
     )
-    blogs = await get_blogs_sorted_by_id()
+    blogs = get_blogs_sorted_by_id()
     for blog in blogs:
         blog.create_at = blog.create_at.astimezone(tz=timezone(timedelta(hours=8)))
         blog.update_at = blog.update_at.astimezone(tz=timezone(timedelta(hours=8)))
     text = template.render(blogs=blogs)
-    blog = await get_blog(2)
+    blog = get_blog(2)
     if blog:
         blog.text = text
-        await update_blog(blog)
+        update_blog(blog)
         logger.info("update_blog_content: successfully")
     else:
         logger.error("update_blog_content: blog(id=2) not exists")

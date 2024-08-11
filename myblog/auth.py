@@ -5,8 +5,7 @@ from hashlib import sha256, pbkdf2_hmac
 
 def get_now(tz: str = "UTC+8") -> datetime:
     if tz == "UTC+8":
-        tz = timezone(timedelta(hours=8))
-        return datetime.now(tz)
+        return datetime.now(timezone(timedelta(hours=8)))
     elif tz == "NOTZ":
         return datetime.now()
     else:
