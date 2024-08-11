@@ -11,9 +11,9 @@ services:
   app:
     build: .
     ports:
-      - "8000:9000"
+      - "8000:8000"
     expose:
-      - "9000"
+      - "8000"
     depends_on:
       - database
     environment:
