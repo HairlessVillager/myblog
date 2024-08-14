@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import datetime
 from os import getenv
 
@@ -31,6 +32,7 @@ class Blog(SqlalchemyBase):
     create_at: Mapped[datetime]  # TODO: use sqla
     update_at: Mapped[datetime]  # TODO: use sqla
     text: Mapped[str]
+    html: Mapped[Optional[str]]
 
     def __repr__(self):
         return f"{self.id} {self.title}"

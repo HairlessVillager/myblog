@@ -172,11 +172,19 @@ async def blog_html(id: int, slug: str):
         if slug != blog.slug:
             return RedirectResponse(f"/blog/{id}/{blog.slug}")
         logger.debug("slug checked")
-        md = await blog2md(blog)
-        logger.debug("blog -> md")
-        html = md2html(md)
-        logger.debug("md -> html")
-        return HTMLResponse(html)
+        if blog.html:
+            logger.debug("blog have html")
+            return HTMLResponse(blog.html)
+        else:
+            logger.debug("blog does not have html")
+            md = await blog2md(blog)
+            logger.debug("blog -> md")
+            html = md2html(md)
+            logger.debug("md -> html")
+            blog.html = html
+            await update_blog(blog)
+            logger.debug("blog saved")
+            return HTMLResponse(html)
     else:
         return RedirectResponse("/blog/404-not-found")
 

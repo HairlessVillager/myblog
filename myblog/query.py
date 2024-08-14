@@ -42,6 +42,8 @@ async def get_pinned_blogs_sorted_by_id() -> Sequence[Blog]:
 async def update_blog(blog: Blog):
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
+        blog.create_at = blog.create_at.replace(tzinfo=None)
+        blog.update_at = blog.update_at.replace(tzinfo=None)
         await session.merge(blog)
         await session.commit()
 
