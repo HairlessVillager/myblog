@@ -165,12 +165,17 @@ async def blog_redirect(id: int):
 
 @app.get("/blog/{id}/{slug}")
 async def blog_html(id: int, slug: str):
+    logger.debug("get request")
     blog = await get_blog(id)
+    logger.debug("get blog")
     if blog:
         if slug != blog.slug:
             return RedirectResponse(f"/blog/{id}/{blog.slug}")
+        logger.debug("slug checked")
         md = await blog2md(blog)
+        logger.debug("blog -> md")
         html = md2html(md)
+        logger.debug("md -> html")
         return HTMLResponse(html)
     else:
         return RedirectResponse("/blog/404-not-found")

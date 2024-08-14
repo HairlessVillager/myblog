@@ -28,7 +28,7 @@ loggers:
       - access
     propagate: no
   app:
-    level: INFO
+    level: DEBUG
     handlers:
       - default
     propagate: no
