@@ -1,4 +1,3 @@
-# > locust -f test.py --host http://localhost:8000
 from locust import HttpUser, task
 
 

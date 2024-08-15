@@ -14,6 +14,10 @@
 1. `docker-compose build`
 2. `docker-compose up`
 
+## Benchmark
+
+`locust -f bench.py --host http://localhost:8000`
+
 ## TODOs
 
-- Add `Dockerfile`
+- replace startup command: `gunicorn myblog:app -w 4 -k uvicorn.workers.UvicornWorker`
