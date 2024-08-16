@@ -1,13 +1,10 @@
 services:
   database:
-    image: postgres
+    image: mongodb/mongodb-community-server:latest
     ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_PASSWORD: "123456"
-      POSTGRES_DB: "myblog"
+      - "27017:27017"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/data/db
   app:
     build: .
     ports:
@@ -17,7 +14,7 @@ services:
     depends_on:
       - database
     environment:
-      DB_URL: "postgresql+asyncpg://postgres:123456@database:5432/myblog"
+      DB_URL: "mongodb://database:27017/"
       SECRET: "123456"
 volumes:
   db_data:
