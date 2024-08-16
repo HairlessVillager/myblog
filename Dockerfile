@@ -11,4 +11,4 @@ COPY . .
 
 EXPOSE 8000
 
-ENTRYPOINT uvicorn myblog:app --log-config=log_conf.yaml --host 0.0.0.0 --workers 2
+ENTRYPOINT python init_script.py && uvicorn myblog:app --log-config=log_conf.yaml --host 0.0.0.0 --workers 2

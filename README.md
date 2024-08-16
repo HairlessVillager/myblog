@@ -7,6 +7,7 @@
   - `DROP_ALL`: if not empty, drop all tables when app start up
   - `DB_URL`: the database url, like `postgresql+asyncpg://postgres:123456@database:5432/myblog`
 - Start PostgreSQL Docker: `docker run -d -e POSTGRES_DB=myblog -e POSTGRES_PASSWORD=<your DB_PASSWORD> -p 5432:5432 postgres`
+- Init: `python init_scripy.py`
 - Start app: `uvicorn myblog:app --log-config=log_conf.yaml`
 
 ## Docker Compose
