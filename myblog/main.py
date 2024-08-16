@@ -72,67 +72,6 @@ def md2html(md: str) -> str:
     return mdit.render(md)
 
 
-@app.on_event("startup")
-async def startup_event():
-    from .model import SqlalchemyBase, engine
-
-    # create all tables
-    async with engine.begin() as conn:
-        if getenv("DROP_ALL"):
-            await conn.run_sync(SqlalchemyBase.metadata.drop_all)
-            logger.warning("startup_event: dropped all tables")
-        await conn.run_sync(SqlalchemyBase.metadata.create_all)
-        logger.info("startup_event: created all tables")
-
-    # init home page
-    blog = await get_blog(1)
-    if blog:
-        form = UpdateBlogForm(token="")
-        form.update(blog)
-        await update_blog(blog)
-        logger.info("startup_event: home updated")
-    else:
-        form = CreateBlogForm(
-            title="Home",
-            pinned=True,
-            deleted=False,
-            slug="home",
-            text="*this page intentionally left blank*",
-            token="",
-        )
-        blog = form.to_blog()
-        await create_blog(blog)
-        logger.info("startup_event: home created")
-
-    # init blog content page
-    blog = await get_blog(2)
-    if blog:
-        form = UpdateBlogForm(token="")
-        form.update(blog)
-        await update_blog(blog)
-        logger.info("startup_event: blog content updated")
-    else:
-        form = CreateBlogForm(
-            title="Blog Content",
-            pinned=True,
-            deleted=False,
-            slug="blog-content",
-            text="*this page intentionally left blank*",
-            token="",
-        )
-        blog = form.to_blog()
-        await create_blog(blog)
-        logger.info("startup_event: blog content created")
-
-    # update blog content
-    await update_blog_content()
-    logger.info("startup_event: update blog content successfully")
-
-    # mount static files
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-    logger.info("startup_event: mount static files successfully")
-
-
 @app.get("/")
 async def home_html():
     return RedirectResponse(url="/blog/1/home")
