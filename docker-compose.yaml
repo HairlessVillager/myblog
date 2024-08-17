@@ -17,6 +17,7 @@ services:
       - "8000"
     depends_on:
       - database
+      - redis
     environment:
       DB_URL: "mongodb://database:27017/"
       REDIS_URL: "redis://redis:6379"
