@@ -1,4 +1,3 @@
-from os import getenv
 from asyncio import run
 
 from myblog.task import update_blog_content
@@ -11,21 +10,9 @@ from myblog.query import (
     get_blog,
     update_blog,
 )
-from myblog.model import (
-    SqlalchemyBase,
-    engine,
-)
 
 
 async def startup():
-    # create all tables
-    async with engine.begin() as conn:
-        if getenv("DROP_ALL"):
-            await conn.run_sync(SqlalchemyBase.metadata.drop_all)
-            print("startup_event: dropped all tables")
-        await conn.run_sync(SqlalchemyBase.metadata.create_all)
-        print("startup_event: created all tables")
-
     # init home page
     blog = await get_blog(1)
     if blog:

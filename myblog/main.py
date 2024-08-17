@@ -1,14 +1,8 @@
-from os import getenv
 import logging
-from datetime import timedelta, timezone
 
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from markdown_it import MarkdownIt
-from mdit_py_plugins.front_matter import front_matter_plugin
-from mdit_py_plugins.footnote import footnote_plugin
-from jinja2 import Template
 
 from .task import update_blog_content
 from .model import (
@@ -19,57 +13,18 @@ from .model import (
 from .query import (
     create_blog,
     get_blog,
-    get_pinned_blogs_sorted_by_id,
     update_blog,
 )
 from .auth import (
     check_token,
 )
-from .schedule import (
-    get_middleware,
+from .util import (
+    blog2md,
+    md2html,
 )
 
-app = FastAPI(middleware=[get_middleware()])
+app = FastAPI()
 logger = logging.getLogger("app")
-
-
-async def blog2md(blog: Blog) -> str:
-    blog.create_at = blog.create_at.astimezone(tz=timezone(timedelta(hours=8)))
-    blog.update_at = blog.update_at.astimezone(tz=timezone(timedelta(hours=8)))
-    template = Template(
-        """### HairlessVillager's Blog
-
----
-
-**pinned**
-{% for blog in pinned_blogs %}
-- [{{ blog.title }}](/blog/{{ blog.id }}/{{ blog.slug }})
-{% endfor %}
-
----
-
-# {{ blog.title }}
-
-- *create@{{ blog.create_at }}*
-- *update@{{ blog.update_at }}*
-
----
-
-{{ blog.text }}
-"""
-    )
-    md = template.render(pinned_blogs=await get_pinned_blogs_sorted_by_id(), blog=blog)
-    return md
-
-
-def md2html(md: str) -> str:
-    mdit = (
-        MarkdownIt("commonmark", {"breaks": True, "html": True})
-        .use(front_matter_plugin)
-        .use(footnote_plugin)
-        .enable("table")
-    )
-    return mdit.render(md)
 
 
 @app.get("/")

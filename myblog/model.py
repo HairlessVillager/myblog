@@ -1,41 +1,54 @@
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 from os import getenv
+from dataclasses import dataclass
 
 from pydantic import BaseModel as PydaticBase
-from sqlalchemy.ext.asyncio import (
-    create_async_engine,
-    AsyncAttrs,
-)
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    mapped_column,
-)
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from .auth import (
     get_now,
 )
 
 
-class SqlalchemyBase(AsyncAttrs, DeclarativeBase):
-    pass
+@dataclass
+class Blog:
+    id: int | None
+    title: str
+    pinned: bool
+    deleted: bool
+    slug: str
+    create_at: datetime
+    update_at: datetime
+    text: str
+    html: Optional[str]
 
+    def into_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "pinned": self.pinned,
+            "deleted": self.deleted,
+            "slug": self.slug,
+            "create_at": self.create_at,
+            "update_at": self.update_at,
+            "text": self.text,
+            "html": self.html,
+        }
 
-class Blog(SqlalchemyBase):
-    __tablename__ = "blogs"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str]
-    pinned: Mapped[bool]
-    deleted: Mapped[bool]
-    slug: Mapped[str]
-    create_at: Mapped[datetime]  # TODO: use sqla
-    update_at: Mapped[datetime]  # TODO: use sqla
-    text: Mapped[str]
-    html: Mapped[Optional[str]]
-
-    def __repr__(self):
-        return f"{self.id} {self.title}"
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Blog":
+        return cls(
+            id=d["id"],
+            title=d["title"],
+            pinned=d["pinned"],
+            deleted=d["deleted"],
+            slug=d["slug"],
+            create_at=d["create_at"],
+            update_at=d["update_at"],
+            text=d["text"],
+            html=d["html"],
+        )
 
 
 class CreateBlogForm(PydaticBase):
@@ -48,6 +61,8 @@ class CreateBlogForm(PydaticBase):
 
     def to_blog(self) -> Blog:
         return Blog(
+            id=None,
+            html=None,
             title=self.title,
             pinned=self.pinned,
             deleted=self.deleted,
@@ -81,7 +96,4 @@ class UpdateBlogForm(PydaticBase):
         return blog
 
 
-engine = create_async_engine(
-    getenv("DB_URL"),
-    echo=False,
-)
+client = AsyncIOMotorClient(getenv("DB_URL"))
