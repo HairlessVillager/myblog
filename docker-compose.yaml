@@ -5,6 +5,10 @@ services:
       - "27017:27017"
     volumes:
       - db_data:/data/db
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
   app:
     build: .
     ports:
@@ -15,6 +19,7 @@ services:
       - database
     environment:
       DB_URL: "mongodb://database:27017/"
+      REDIS_URL: "redis://redis:6379"
       SECRET: "123456"
 volumes:
   db_data:

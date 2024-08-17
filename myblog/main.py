@@ -22,6 +22,12 @@ from .util import (
     blog2md,
     md2html,
 )
+from .redis import (
+    get_slug,
+    get_html,
+    set_slug,
+    set_html,
+)
 
 app = FastAPI()
 logger = logging.getLogger("app")
@@ -60,27 +66,46 @@ async def blog_redirect(id: int):
 @app.get("/blog/{id}/{slug}")
 async def blog_html(id: int, slug: str):
     logger.debug("get request")
-    blog = await get_blog(id)
-    logger.debug("get blog")
-    if blog:
-        if slug != blog.slug:
-            return RedirectResponse(f"/blog/{id}/{blog.slug}")
-        logger.debug("slug checked")
-        if blog.html:
-            logger.debug("blog have html")
-            return HTMLResponse(blog.html)
+
+    # if in redis
+    if blog_slug := get_slug(id):
+        logger.debug("hit redis")
+        if slug != blog_slug:
+            return RedirectResponse(f"/blog/{id}/{blog_slug}")
         else:
-            logger.debug("blog does not have html")
-            md = await blog2md(blog)
-            logger.debug("blog -> md")
-            html = md2html(md)
-            logger.debug("md -> html")
-            blog.html = html
-            await update_blog(blog)
-            logger.debug("blog saved")
+            html = get_html(id)
+            logger.debug("return")
             return HTMLResponse(html)
+
+    # if not in redis
     else:
-        return RedirectResponse("/blog/404-not-found")
+        logger.debug("miss redis")
+        blog = await get_blog(id)
+        logger.debug("get blog")
+        if blog:
+            if slug != blog.slug:
+                return RedirectResponse(f"/blog/{id}/{blog.slug}")
+            logger.debug("slug checked")
+            set_slug(id, slug)
+            if blog.html:
+                logger.debug("blog have html")
+                set_html(id, blog.html)
+                logger.debug("cached")
+                return HTMLResponse(blog.html)
+            else:
+                logger.debug("blog does not have html")
+                md = await blog2md(blog)
+                logger.debug("blog -> md")
+                html = md2html(md)
+                logger.debug("md -> html")
+                blog.html = html
+                await update_blog(blog)
+                logger.debug("blog saved")
+                set_html(id, html)
+                logger.debug("cached")
+                return HTMLResponse(html)
+        else:
+            return RedirectResponse("/blog/404-not-found")
 
 
 @app.post("/blog/edit/{id}")

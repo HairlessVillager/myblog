@@ -8,3 +8,4 @@ starlette==0.37.2
 asyncpg==0.29.0
 uvicorn==0.30.5
 PyYAML==6.0
+redis==5.0.8
