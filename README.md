@@ -17,7 +17,8 @@
 
 ## Benchmark
 
-`locust -f bench.py --host http://localhost:8000`
+1. Master process: `locust -f bench.py --host http://localhost:8000 --master`
+2. Worker process (suggest x4): `locust -f bench.py --host http://localhost:8000 --worker`
 
 ## TODOs
 
