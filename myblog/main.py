@@ -1,8 +1,8 @@
 import logging
+from typing import Dict, Tuple
 
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 
 from .task import update_blog_content
 from .model import (
@@ -31,6 +31,9 @@ from .redis import (
 
 app = FastAPI()
 logger = logging.getLogger("app")
+
+# map id -> (slug, html)
+blog_local_cache: Dict[int, Tuple[str, str]] = {}
 
 
 @app.get("/")
@@ -67,17 +70,30 @@ async def blog_redirect(id: int):
 async def blog_html(id: int, slug: str):
     logger.debug("get request")
 
-    # if in redis
-    if blog_slug := get_slug(id):
-        logger.debug("hit redis")
+    # if in local cache
+    if id in blog_local_cache:
+        logger.debug("hit local cache")
+        blog_slug, html = blog_local_cache[id]
         if slug != blog_slug:
             return RedirectResponse(f"/blog/{id}/{blog_slug}")
         else:
+            return HTMLResponse(html)
+
+    # else if in redis
+    elif blog_slug := get_slug(id):
+        logger.debug("hit redis")
+
+        if slug != blog_slug:
+            return RedirectResponse(f"/blog/{id}/{blog_slug}")
+        else:
+            # save in local cache
             html = get_html(id)
+            blog_local_cache[id] = (blog_slug, html)
+
             logger.debug("return")
             return HTMLResponse(html)
 
-    # if not in redis
+    # else read from database
     else:
         logger.debug("miss redis")
         blog = await get_blog(id)
@@ -87,20 +103,32 @@ async def blog_html(id: int, slug: str):
                 return RedirectResponse(f"/blog/{id}/{blog.slug}")
             logger.debug("slug checked")
             set_slug(id, slug)
+
+            # if html render early
             if blog.html:
                 logger.debug("blog have html")
+
+                # cache html in redis
                 set_html(id, blog.html)
                 logger.debug("cached")
                 return HTMLResponse(blog.html)
+
+            # else render html lazily
             else:
                 logger.debug("blog does not have html")
+
+                # render html
                 md = await blog2md(blog)
                 logger.debug("blog -> md")
                 html = md2html(md)
                 logger.debug("md -> html")
+
+                # save html to database
                 blog.html = html
                 await update_blog(blog)
                 logger.debug("blog saved")
+
+                # cache html in redis
                 set_html(id, html)
                 logger.debug("cached")
                 return HTMLResponse(html)
